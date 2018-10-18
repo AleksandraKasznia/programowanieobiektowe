@@ -25,11 +25,9 @@ public class SparseDataFrame extends DataFrame {
 
         for(int columnIterator=0; columnIterator<numberOfColumns; columnIterator++){
             ArrayList temp = df.get(names[columnIterator]);
+            sparseDataFrame.add(new ArrayList<>(1));
             for(int rowIterator=0; rowIterator<temp.size(); rowIterator++){
-                if(temp.get(rowIterator)!=toHide){
-                    if(rowIterator==0){
-                        sparseDataFrame.add(new ArrayList<>());
-                    }
+                if(!temp.get(rowIterator).equals(toHide)){
                     sparseDataFrame.get(columnIterator).add(new CooValue(rowIterator,temp.get(rowIterator)));
                 }
             }
@@ -37,18 +35,20 @@ public class SparseDataFrame extends DataFrame {
     }
 
 
-    DataFrame toDense() throws CustomException{
+    DataFrame toDense()throws CustomException{
         DataFrame standardDataFrame = new DataFrame(names, types);
         Object[] temp = new Object[numberOfColumns];
 
         for(int rowIterator=0; rowIterator<sizeOfColumn; rowIterator++){
+            int sparseDfRowIterator = 0;
             for(int columnIterator=0; columnIterator<names.length; columnIterator++){
-                if(sparseDataFrame.get(columnIterator).get(rowIterator).index!=rowIterator){
-                    temp[columnIterator] = toHide;
-                }
-                else{
-                    temp[columnIterator] = sparseDataFrame.get(columnIterator).get(rowIterator).content;
-                }
+                    if (sparseDataFrame.get(columnIterator).get(sparseDfRowIterator).index != rowIterator) {
+                        temp[columnIterator] = toHide;
+                    }
+                    else {
+                        temp[columnIterator] = sparseDataFrame.get(columnIterator).get(rowIterator).content;
+                        sparseDfRowIterator++;
+                    }
             }
             standardDataFrame.add(temp);
         }
