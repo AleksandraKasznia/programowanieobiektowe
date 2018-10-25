@@ -8,20 +8,17 @@ import java.util.Scanner;
 
 
 public class DataFrame {
-    protected ArrayList<ArrayList> dataFrame;
-    protected String[] names;
-    protected String[] types;
+    ArrayList<ArrayList> dataFrame;
+    String[] names;
+    Class<? extends Value>[] types;
 
 
-    public DataFrame(String[] names, String[] types){
+    public DataFrame(String[] names, Class<? extends Value>[] types){
         dataFrame = new ArrayList<>();
         int size = names.length;
         this.names = names;
         this.types = types;
-        for (int i=0; i<size; i++){
-            dataFrame.add(new ArrayList());
-        }
-
+        initiate(types);
     }
 
     DataFrame(String[] names, ArrayList<ArrayList> data){
@@ -35,9 +32,11 @@ public class DataFrame {
         dataFrame = df.dataFrame;
     }
 
-    DataFrame(String fileName, String[] types, boolean isHeader){
+    DataFrame(String fileName, Class<? extends Value>[] types, boolean isHeader){
+        Class  myclass = types[1];
         try ( BufferedReader br = Files.newBufferedReader(Paths.get(fileName))){
             dataFrame = new ArrayList<>();
+            initiate(types);
             String line = br.readLine();
             if(isHeader && line!=null){
                 names = line.split(",");
@@ -114,26 +113,50 @@ public class DataFrame {
         return new DataFrame(names, df);
     }
 
-    void add(Object[] values)throws CustomException{
-        if(values.length == names.length){
-            if (dataFrame.size()==0){
-                for (int i=0; i<names.length; i++){
-                    ArrayList temp = new ArrayList();
-                    temp.add(values[i]);
-                    dataFrame.add(temp);
+    void initiate(Class<? extends Value>[] v){
+        if(v.length == names.length){
+                for(int columnIterator=0; columnIterator<names.length; columnIterator++) {
+                    if (Value.class.isAssignableFrom(types[columnIterator])) {
+                        if (types[columnIterator] == IntHolder.class) {
+                            dataFrame.add(new ArrayList<IntHolder>());
+                        }
+                        if (types[columnIterator] == DoubleHolder.class) {
+                            dataFrame.add(new ArrayList<DoubleHolder>());
+                        }
+                        if (types[columnIterator] == FloatHolder.class) {
+                            dataFrame.add(new ArrayList<FloatHolder>());
+                        }
+                        if (types[columnIterator] == StringHolder.class) {
+                            dataFrame.add(new ArrayList<StringHolder>());
+                        }
+                        if (types[columnIterator] == DateTimeHolder.class) {
+                            dataFrame.add(new ArrayList<DateTimeHolder>());
+                        }
+
+                    }
                 }
-            }
-            else{
-                for(int columnIterator=0; columnIterator<names.length; columnIterator++){
-                    dataFrame.get(columnIterator).add(values[columnIterator]);
-                }
-            }
-        }
-        else {
-            throw new CustomException("Number of adding objects can't differ from the number of columns");
         }
     }
+
+    void add(String [] content){
+        Value[] values = new Value[dataFrame.size()];
+        for(int columnIterator=0; columnIterator<names.length; columnIterator++){
+            if (types[columnIterator] == IntHolder.class){
+                values[columnIterator] = IntHolder.getInstance().create(content[columnIterator]);
+            }
+            if (types[columnIterator] == DoubleHolder.class){
+                values[columnIterator] = DoubleHolder.getInstance().create(content[columnIterator]);
+            }
+            if (types[columnIterator] == FloatHolder.class){
+                values[columnIterator] = FloatHolder.getInstance().create(content[columnIterator]);
+            }
+            if (types[columnIterator] == StringHolder.class){
+                values[columnIterator] = StringHolder.getInstance().create(content[columnIterator]);
+            }
+            if (types[columnIterator] == DateTimeHolder.class){
+                values[columnIterator] = DateTimeHolder.getInstance().create(content[columnIterator]);
+            }
+        }
+    }
+
 }
-
-
-
