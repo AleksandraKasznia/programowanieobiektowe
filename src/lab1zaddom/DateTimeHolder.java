@@ -89,7 +89,7 @@ public class DateTimeHolder extends Value{
     }
 
     @Override
-    public Value create(String s){
+    public DateTimeHolder create(String s){
         if(s.matches("\\d{4}-\\d{2}-\\d{2}")){
             DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
             try{

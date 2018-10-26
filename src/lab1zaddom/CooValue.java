@@ -75,7 +75,7 @@ public class CooValue extends Value{
     }
 
     @Override
-    public Value create(String s) {
-        return content.create(s);
+    public CooValue create(String s) {
+        return new CooValue(index,content.create(s));
     }
 }

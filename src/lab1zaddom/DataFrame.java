@@ -2,9 +2,8 @@ package lab1zaddom;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
+import java.util.*;
 import java.io.*;
-import java.util.Scanner;
 
 
 public class DataFrame {
@@ -33,23 +32,27 @@ public class DataFrame {
     }
 
     DataFrame(String fileName, Class<? extends Value>[] types, boolean isHeader){
-        Class  myclass = types[1];
         try ( BufferedReader br = Files.newBufferedReader(Paths.get(fileName))){
             dataFrame = new ArrayList<>();
-            initiate(types);
             String line = br.readLine();
-            if(isHeader && line!=null){
-                names = line.split(",");
-                line = br.readLine();
+            if(line.split(",").length!=types.length){
+                System.out.print("Amount of given types can't differ from number of columns in file");
             }
+            else{
+                names = new String[types.length];
+                if(isHeader && line!=null){
+                    names = line.split(",");
+                    line = br.readLine();
+                }
+                initiate(types);
+                this.types = types;
 
-            while(line!=null){
-                String[] attributes = line.split(",");
-                add(attributes);
-                line = br.readLine();
-
+                while(line!=null){
+                    String[] attributes = line.split(",");
+                    add(attributes);
+                    line = br.readLine();
+                }
             }
-
         } catch (Exception exception){
             exception.printStackTrace();
         }
@@ -81,6 +84,14 @@ public class DataFrame {
             }
         }
         return new DataFrame(cols, list);
+    }
+
+    ArrayList getRow(int indexOfRow){
+        ArrayList row = new ArrayList();
+        for(int columnIterator=0; columnIterator<names.length; columnIterator++){
+            row.add(dataFrame.get(columnIterator).get(indexOfRow));
+        }
+        return row;
     }
 
     DataFrame iloc(int i){
@@ -116,47 +127,89 @@ public class DataFrame {
     void initiate(Class<? extends Value>[] v){
         if(v.length == names.length){
                 for(int columnIterator=0; columnIterator<names.length; columnIterator++) {
-                    if (Value.class.isAssignableFrom(types[columnIterator])) {
-                        if (types[columnIterator] == IntHolder.class) {
+                    if (Value.class.isAssignableFrom(v[columnIterator])) {
+                        if (v[columnIterator] == IntHolder.class) {
                             dataFrame.add(new ArrayList<IntHolder>());
                         }
-                        if (types[columnIterator] == DoubleHolder.class) {
+                        if (v[columnIterator] == DoubleHolder.class) {
                             dataFrame.add(new ArrayList<DoubleHolder>());
                         }
-                        if (types[columnIterator] == FloatHolder.class) {
+                        if (v[columnIterator] == FloatHolder.class) {
                             dataFrame.add(new ArrayList<FloatHolder>());
                         }
-                        if (types[columnIterator] == StringHolder.class) {
+                        if (v[columnIterator] == StringHolder.class) {
                             dataFrame.add(new ArrayList<StringHolder>());
                         }
-                        if (types[columnIterator] == DateTimeHolder.class) {
+                        if (v[columnIterator] == DateTimeHolder.class) {
                             dataFrame.add(new ArrayList<DateTimeHolder>());
                         }
 
+                    }
+                    else{
+                        System.out.print("Wrong type");
                     }
                 }
         }
     }
 
     void add(String [] content){
-        Value[] values = new Value[dataFrame.size()];
+        ArrayList <Value> values = new ArrayList<Value>(dataFrame.size());
+        try{
+            for(int columnIterator=0; columnIterator<names.length; columnIterator++){
+                if (types[columnIterator] == IntHolder.class){
+                    values.add(IntHolder.getInstance().create(content[columnIterator]));
+                }
+                if (types[columnIterator] == DoubleHolder.class){
+                    values.add(DoubleHolder.getInstance().create(content[columnIterator]));
+                }
+                if (types[columnIterator] == FloatHolder.class){
+                    values.add(FloatHolder.getInstance().create(content[columnIterator]));
+                }
+                if (types[columnIterator] == StringHolder.class){
+                    values.add(StringHolder.getInstance().create(content[columnIterator]));
+                }
+                if (types[columnIterator] == DateTimeHolder.class){
+                    values.add(DateTimeHolder.getInstance().create(content[columnIterator]));
+                }
+            }
+            addRow(values);
+        }
+        catch(NumberFormatException e){
+            System.out.print("Values in file of different types than given types");
+        }
+
+    }
+
+    void addRow(ArrayList row){
         for(int columnIterator=0; columnIterator<names.length; columnIterator++){
-            if (types[columnIterator] == IntHolder.class){
-                values[columnIterator] = IntHolder.getInstance().create(content[columnIterator]);
-            }
-            if (types[columnIterator] == DoubleHolder.class){
-                values[columnIterator] = DoubleHolder.getInstance().create(content[columnIterator]);
-            }
-            if (types[columnIterator] == FloatHolder.class){
-                values[columnIterator] = FloatHolder.getInstance().create(content[columnIterator]);
-            }
-            if (types[columnIterator] == StringHolder.class){
-                values[columnIterator] = StringHolder.getInstance().create(content[columnIterator]);
-            }
-            if (types[columnIterator] == DateTimeHolder.class){
-                values[columnIterator] = DateTimeHolder.getInstance().create(content[columnIterator]);
+            dataFrame.get(columnIterator).add(row.get(columnIterator));
+        }
+    }
+
+    LinkedList<DataFrame> groupby(String colname){
+        LinkedList<DataFrame> splittedDataFrame = new LinkedList<DataFrame>();
+        Set<Value> uniqueValues = new HashSet(get(colname));
+        Iterator<Value> it = uniqueValues.iterator();
+        while(it.hasNext()){
+            splittedDataFrame.add(createDataFrameForGivenValue(it.next(),colname));
+        }
+        return splittedDataFrame;
+    }
+
+    DataFrame createDataFrameForGivenValue(Value value, String colname){
+        DataFrame dataFrameOfValue = new DataFrame(names,types);
+        int indexOfColumn = 0;
+        while(!names[indexOfColumn].equals(colname)){
+            indexOfColumn++;
+        }
+
+        for(int indexOfElement=dataFrame.get(indexOfColumn).indexOf(value); indexOfElement<dataFrame.get(indexOfColumn).size(); indexOfElement++){
+            if(dataFrame.get(indexOfColumn).get(indexOfElement).equals(value)){
+                dataFrameOfValue.addRow(getRow(indexOfElement));
             }
         }
+
+        return dataFrameOfValue;
     }
 
 }

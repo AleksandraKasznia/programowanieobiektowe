@@ -77,7 +77,7 @@ public class StringHolder extends Value{
     }
 
     @Override
-    public Value create(String s) {
+    public StringHolder create(String s) {
         stringValue = s;
         return this;
     }
