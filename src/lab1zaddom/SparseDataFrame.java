@@ -6,9 +6,9 @@ public class SparseDataFrame extends DataFrame {
     ArrayList<ArrayList<CooValue>> sparseDataFrame;
     int numberOfColumns;
     int sizeOfColumn;
-    Object toHide;
+    String toHide;
 
-    public SparseDataFrame(String[] namesOfColumns, String[] typesOfColumns, Object hide ) {
+    public SparseDataFrame(String[] namesOfColumns, Class<? extends Value>[] typesOfColumns, String hide ) {
         super(namesOfColumns, typesOfColumns);
         numberOfColumns = namesOfColumns.length;
         names = namesOfColumns;
@@ -16,7 +16,7 @@ public class SparseDataFrame extends DataFrame {
         toHide = hide;
     }
 
-    public SparseDataFrame(DataFrame df, Object hide){
+    public SparseDataFrame(DataFrame df, String hide){
         super(df);
         numberOfColumns = names.length;
         sizeOfColumn = df.get(df.names[0]).size();
@@ -27,8 +27,8 @@ public class SparseDataFrame extends DataFrame {
             ArrayList temp = df.get(names[columnIterator]);
             sparseDataFrame.add(new ArrayList<>(1));
             for(int rowIterator=0; rowIterator<temp.size(); rowIterator++){
-                if(!temp.get(rowIterator).equals(toHide)){
-                    sparseDataFrame.get(columnIterator).add(new CooValue(rowIterator,temp.get(rowIterator)));
+                if(!(temp.get(rowIterator).toString()).equals(toHide)){
+                    sparseDataFrame.get(columnIterator).add(new CooValue(rowIterator,(Value)temp.get(rowIterator)));
                 }
             }
         }
@@ -37,7 +37,7 @@ public class SparseDataFrame extends DataFrame {
 
     DataFrame toDense()throws CustomException{
         DataFrame standardDataFrame = new DataFrame(names, types);
-        Object[] temp = new Object[numberOfColumns];
+        String[] temp = new String[numberOfColumns];
 
         for(int rowIterator=0; rowIterator<sizeOfColumn; rowIterator++){
             int sparseDfRowIterator = 0;
@@ -46,7 +46,7 @@ public class SparseDataFrame extends DataFrame {
                         temp[columnIterator] = toHide;
                     }
                     else {
-                        temp[columnIterator] = sparseDataFrame.get(columnIterator).get(rowIterator).content;
+                        temp[columnIterator] = sparseDataFrame.get(columnIterator).get(rowIterator).content.toString();
                         sparseDfRowIterator++;
                     }
             }
@@ -55,7 +55,7 @@ public class SparseDataFrame extends DataFrame {
         return standardDataFrame;
     }
 
-    void add(Object[] values) throws CustomException{
+    void add(Value[] values) throws CustomException{
         if(values.length == numberOfColumns){
             int rowIterator;
 
@@ -64,7 +64,7 @@ public class SparseDataFrame extends DataFrame {
                 while (sparseDataFrame.get(columnIterator).get(rowIterator)!=null){
                     rowIterator++;
                 }
-                if(values[columnIterator]!=toHide){
+                if(!values[columnIterator].toString().equals(toHide)){
                     sparseDataFrame.get(columnIterator).add(new CooValue(rowIterator,values[columnIterator]));
                 }
             }
