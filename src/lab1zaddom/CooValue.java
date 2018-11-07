@@ -9,6 +9,8 @@ public class CooValue extends Value{
         content = inputContent;
     }
 
+    CooValue(){}
+
     @Override
     public String toString() {
         return  content.toString();

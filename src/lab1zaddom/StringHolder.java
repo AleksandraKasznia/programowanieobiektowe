@@ -14,7 +14,7 @@ public class StringHolder extends Value{
         return stringHolder;
     }
 
-    private StringHolder(){};
+    StringHolder(){}
 
     public String getValue() {
         return stringValue;

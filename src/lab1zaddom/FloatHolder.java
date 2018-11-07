@@ -14,7 +14,7 @@ public class FloatHolder extends Value{
         return floatHolder;
     }
 
-    private FloatHolder(){};
+    FloatHolder(){};
 
 
     public float getValue() {

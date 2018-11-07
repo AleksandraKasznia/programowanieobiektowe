@@ -18,7 +18,7 @@ public class DateTimeHolder extends Value{
         return dateTimeHolder;
     }
 
-    private DateTimeHolder(){
+    DateTimeHolder(){
         dateValue = new Date();
     };
 

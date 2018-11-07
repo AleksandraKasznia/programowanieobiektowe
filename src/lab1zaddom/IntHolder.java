@@ -14,7 +14,7 @@ public class IntHolder extends Value {
         return intholder;
     }
 
-    private IntHolder(){}
+    IntHolder(){}
 
 
     public int getValue() {

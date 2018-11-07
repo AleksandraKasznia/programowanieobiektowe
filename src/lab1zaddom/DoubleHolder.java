@@ -10,11 +10,12 @@ public class DoubleHolder extends Value{
         doubleValue = x;
     }
 
+
     public static DoubleHolder getInstance(){
         return doubleholder;
     }
 
-    private DoubleHolder(){};
+    DoubleHolder(){};
 
 
     public double getValue() {
