@@ -3,7 +3,7 @@ package lab1zaddom;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 
-public abstract class Value implements Cloneable{
+public abstract class Value implements Cloneable,Comparable<Value>{
     public abstract String toString();
     public abstract Value add(Value value);
     public abstract Value sub(Value value);
@@ -17,10 +17,14 @@ public abstract class Value implements Cloneable{
     public abstract boolean equals(Object other);
     public abstract int hashCode();
     public abstract Value create(String s);
+    public abstract Object getValue();
 
     public static ValueBuilder builder(Class<? extends Value> type){
         return new ValueBuilder(type);
     }
+
+    @Override
+    public abstract int compareTo(Value o);
 
     public static class ValueBuilder{
         Class<? extends Value> classOfValue;

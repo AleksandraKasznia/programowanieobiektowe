@@ -9,11 +9,10 @@ public class Main {
         IntHolder intHolder = new IntHolder(6);
         StringHolder stringholder = new StringHolder("blabla");
         DateTimeHolder data = new DateTimeHolder(new Date());
-        data = DateTimeHolder.getInstance().create("1998-09-30");
         DataFrame testdata = new DataFrame("test.csv",new Class[]{FloatHolder.class, FloatHolder.class,FloatHolder.class},true);
         LinkedList lis = new LinkedList();
-        String[] str = new String[]{"x","last"};
-        lis = testdata.groupby(str);
+        String[] str = new String[]{"x"};
+        testdata = testdata.groupby(str).max();
         int k =1;
     }
 }

@@ -3,21 +3,17 @@ package lab1zaddom;
 import java.util.Objects;
 
 public class FloatHolder extends Value{
-    float floatValue;
-    private static FloatHolder floatHolder = new FloatHolder();
+    Float floatValue;
 
     public FloatHolder (float x){
         floatValue = x;
     }
 
-    public static FloatHolder getInstance(){
-        return floatHolder;
-    }
 
     FloatHolder(){};
 
 
-    public float getValue() {
+    public Float getValue() {
         return floatValue;
     }
 
@@ -58,6 +54,9 @@ public class FloatHolder extends Value{
         if (value instanceof FloatHolder){
             this.floatValue /= ((FloatHolder) value).getValue();
         }
+        if (value instanceof IntHolder){
+            this.floatValue /= ((IntHolder)value).getValue();
+        }
         return this;
 
     }
@@ -66,6 +65,9 @@ public class FloatHolder extends Value{
     public Value pow(Value value) {
         if (value instanceof FloatHolder){
             this.floatValue = (float)Math.pow(this.floatValue,((FloatHolder) value).getValue());
+        }
+        if (value instanceof DoubleHolder){
+            this.floatValue = (float)Math.pow((double)this.floatValue,((DoubleHolder) value).getValue());
         }
         return this;
 
@@ -119,5 +121,10 @@ public class FloatHolder extends Value{
     @Override
     public int hashCode() {
         return Objects.hash(floatValue);
+    }
+
+    @Override
+    public int compareTo(Value o) {
+        return floatValue.compareTo(((FloatHolder)o).getValue());
     }
 }

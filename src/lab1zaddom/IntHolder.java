@@ -3,21 +3,16 @@ package lab1zaddom;
 import java.util.Objects;
 
 public class IntHolder extends Value {
-    int intValue;
-    private static IntHolder intholder = new IntHolder();
+    Integer intValue;
 
     public IntHolder (int x){
         intValue = x;
     }
 
-    public static IntHolder getInstance(){
-        return intholder;
-    }
-
     IntHolder(){}
 
 
-    public int getValue() {
+    public Integer getValue() {
         return intValue;
     }
 
@@ -66,6 +61,9 @@ public class IntHolder extends Value {
     public Value pow(Value value) {
         if (value instanceof IntHolder){
             this.intValue = (int)Math.pow((double)this.intValue,(double)((IntHolder) value).getValue());
+        }
+        if (value instanceof DoubleHolder){
+            this.intValue = (int)Math.pow((double)this.intValue,((DoubleHolder) value).getValue());
         }
         return this;
 
@@ -119,5 +117,10 @@ public class IntHolder extends Value {
     @Override
     public int hashCode() {
         return Objects.hash(intValue);
+    }
+
+    @Override
+    public int compareTo(Value o) {
+        return intValue.compareTo(((IntHolder)o).getValue());
     }
 }

@@ -183,7 +183,7 @@ public class DataFrame {
         return splitDataFrame;
     }
 
-    LinkedList<DataFrame> groupby(String[] colnames){
+    SplitData groupby(String[] colnames){
         LinkedList<LinkedList<DataFrame>> tmp = new LinkedList <>();
         LinkedList<DataFrame> splitDataFrame = new LinkedList<DataFrame>(groupbyOne(colnames[0]));
 
@@ -194,7 +194,7 @@ public class DataFrame {
             splitDataFrame = flattenLinkedList(tmp);
             tmp.clear();
         }
-        return splitDataFrame;
+        return new SplitData(colnames,splitDataFrame);
     }
 
     DataFrame createDataFrameForGivenValue(Value value, String colname){
@@ -224,50 +224,179 @@ public class DataFrame {
     public class SplitData implements GroupBy{
         LinkedList<DataFrame> listOfSplitDataFrames;
         DataFrame output;
-        Class<? extends Value>[] typesOfOutput;
-        String[] namesOfOutput;
+        ArrayList<Value> row;
+        ArrayList<Class> typesOfOutput;
+        String[] namesToGroupBy;
+        ArrayList<String> namesOfOutput;
 
-        SplitData(String[] colnames){
-            listOfSplitDataFrames=groupby(colnames);
-            for(int columnIterator=0; columnIterator<types.length; columnIterator++){
-                if(Arrays.stream(names).anyMatch(colnames[columnIterator]::equals)){
+        SplitData(String[] colnames, LinkedList<DataFrame> listOfSplitDataFrames){
+            namesToGroupBy = colnames;
+            this.listOfSplitDataFrames=listOfSplitDataFrames;
+            row = new ArrayList<>();
+            namesOfOutput = new ArrayList<>();
+            typesOfOutput = new ArrayList<>();
+            output = new DataFrame(names, types);
+        }
 
-                }
-            }
+        private boolean ifColumnIsNumeric(ArrayList column){
+            return (column.get(0) instanceof IntHolder | column.get(0) instanceof DoubleHolder | column.get(0)
+                    instanceof FloatHolder);
         }
 
         @Override
         public DataFrame max() {
-            for(int listIterator=0; listIterator<listOfSplitDataFrames.size(); listIterator++){
-                for(int columnIterator=0; columnIterator<types.length; columnIterator++){
-
+            for (DataFrame data: listOfSplitDataFrames){
+                row.clear();
+                for(ArrayList<? extends Value> column: data.dataFrame){
+                    row.add(Collections.max(column));
                 }
+                output.addRow(row);
             }
+
+            return output;
         }
 
         @Override
         public DataFrame min() {
-            return null;
+            for (DataFrame data: listOfSplitDataFrames){
+                row.clear();
+                for(ArrayList<? extends Value> column: data.dataFrame){
+                    row.add(Collections.min(column));
+                }
+                output.addRow(row);
+            }
+
+            return output;
+        }
+
+        public ArrayList<Value> meanOfColumn(DataFrame data){
+            Value sum;
+            int rowIterator;
+                row.clear();
+                for(ArrayList<? extends Value> column: data.dataFrame){
+                    if(ifColumnIsNumeric(column)){
+                        sum = column.get(0);
+
+                        for(rowIterator=0; rowIterator<column.size(); rowIterator++){
+                            if(rowIterator!=0){
+                                sum.add(column.get(rowIterator));
+                            }
+                        }
+                        row.add(sum.div(new IntHolder(rowIterator)));
+                    }
+                    else{
+                        row.add(null);
+                    }
+                }
+                return row;
         }
 
         @Override
         public DataFrame mean() {
-            return null;
+            for (DataFrame data: listOfSplitDataFrames){
+                output.addRow(meanOfColumn(data));
+            }
+
+            return output;
         }
 
         @Override
         public DataFrame std() {
-            return null;
+            ArrayList<Value> rowOfMeans;
+            Value sum;
+            Value distance;
+            int index=0;
+            int rowIterator=0;
+            for (DataFrame data: listOfSplitDataFrames){
+                rowOfMeans = meanOfColumn(data);
+                for(ArrayList<? extends Value> column: data.dataFrame){
+                    if(Arrays.stream(namesToGroupBy).anyMatch(names[index++]::equals)){
+                        row.add(column.get(0));
+                    }
+                    else{
+                        if(rowOfMeans.get(index)!=null){
+                            distance= column.get(rowIterator).sub(rowOfMeans.get(rowIterator));
+                            sum = distance.mul(distance);
+                            for(rowIterator=0; rowIterator<column.size(); rowIterator++){
+                                if(rowIterator!=0){
+                                    distance= column.get(rowIterator).sub(rowOfMeans.get(rowIterator));
+                                    sum.add(distance.mul(distance));
+                                }
+                            }
+                            row.add((sum.div(new IntHolder(rowIterator))).pow(new DoubleHolder(0.5)));
+                        }
+                        else {
+                            row.add(null);
+                        }
+                    }
+                }
+
+                output.addRow(row);
+            }
+            return output;
         }
 
         @Override
         public DataFrame sum() {
-            return null;
+            Value sum;
+            int rowIterator;
+            for (DataFrame data: listOfSplitDataFrames){
+                row.clear();
+                for(ArrayList<? extends Value> column: data.dataFrame){
+                    if(ifColumnIsNumeric(column)){
+                        sum = column.get(0);
+
+                        for(rowIterator=0; rowIterator<column.size(); rowIterator++){
+                            if(rowIterator!=0){
+                                sum.add(column.get(rowIterator));
+                            }
+                        }
+                        row.add(sum);
+                    }
+                    else{
+                        row.add(null);
+                    }
+                }
+                output.addRow(row);
+            }
+
+            return output;
         }
 
         @Override
         public DataFrame var() {
-            return null;
+            ArrayList<Value> rowOfMeans;
+            Value sum;
+            Value distance;
+            int index=0;
+            int rowIterator=0;
+            for (DataFrame data: listOfSplitDataFrames){
+                rowOfMeans = meanOfColumn(data);
+                for(ArrayList<? extends Value> column: data.dataFrame){
+                    if(Arrays.stream(namesToGroupBy).anyMatch(names[index++]::equals)){
+                        row.add(column.get(0));
+                    }
+                    else{
+                        if(rowOfMeans.get(index)!=null){
+                            distance= column.get(rowIterator).sub(rowOfMeans.get(rowIterator));
+                            sum = distance.mul(distance);
+                            for(rowIterator=0; rowIterator<column.size(); rowIterator++){
+                                if(rowIterator!=0){
+                                    distance= column.get(rowIterator).sub(rowOfMeans.get(rowIterator));
+                                    sum.add(distance.mul(distance));
+                                }
+                            }
+                            row.add(sum.div(new IntHolder(rowIterator)));
+                        }
+                        else {
+                            row.add(null);
+                        }
+                    }
+                }
+
+                output.addRow(row);
+            }
+            return output;
         }
 
         @Override

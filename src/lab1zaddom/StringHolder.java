@@ -4,14 +4,9 @@ import java.util.Objects;
 
 public class StringHolder extends Value{
     String stringValue;
-    private static StringHolder stringHolder = new StringHolder();
 
     public StringHolder (String x){
         stringValue = x;
-    }
-
-    public static StringHolder getInstance(){
-        return stringHolder;
     }
 
     StringHolder(){}
@@ -93,5 +88,10 @@ public class StringHolder extends Value{
     @Override
     public int hashCode() {
         return Objects.hash(stringValue);
+    }
+
+    @Override
+    public int compareTo(Value o) {
+        return stringValue.compareTo(((StringHolder)o).getValue());
     }
 }

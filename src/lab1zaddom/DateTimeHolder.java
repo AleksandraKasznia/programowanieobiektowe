@@ -8,14 +8,10 @@ import java.util.Objects;
 
 public class DateTimeHolder extends Value{
     Date dateValue;
-    private static DateTimeHolder dateTimeHolder = new DateTimeHolder();
+
 
     public DateTimeHolder (Date x){
         dateValue = x;
-    }
-
-    public static DateTimeHolder getInstance(){
-        return dateTimeHolder;
     }
 
     DateTimeHolder(){
@@ -115,5 +111,10 @@ public class DateTimeHolder extends Value{
     @Override
     public int hashCode() {
         return Objects.hash(dateValue);
+    }
+
+    @Override
+    public int compareTo(Value o) {
+        return dateValue.compareTo(((DateTimeHolder)o).getValue());
     }
 }

@@ -17,6 +17,11 @@ public class CooValue extends Value{
     }
 
     @Override
+    public Object getValue() {
+        return content;
+    }
+
+    @Override
     public Value add(Value value) {
         content = content.add(value);
         return this;
@@ -79,5 +84,10 @@ public class CooValue extends Value{
     @Override
     public CooValue create(String s) {
         return new CooValue(index,content.create(s));
+    }
+
+    @Override
+    public int compareTo(Value o) {
+        return content.compareTo(o);
     }
 }

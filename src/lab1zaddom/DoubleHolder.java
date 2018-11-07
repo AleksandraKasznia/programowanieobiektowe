@@ -3,22 +3,17 @@ package lab1zaddom;
 import java.util.Objects;
 
 public class DoubleHolder extends Value{
-    double doubleValue;
-    private static DoubleHolder doubleholder = new DoubleHolder();
+    Double doubleValue;
 
     public DoubleHolder (double x){
         doubleValue = x;
     }
 
 
-    public static DoubleHolder getInstance(){
-        return doubleholder;
-    }
-
     DoubleHolder(){};
 
 
-    public double getValue() {
+    public Double getValue() {
         return doubleValue;
     }
 
@@ -58,6 +53,9 @@ public class DoubleHolder extends Value{
     public Value div(Value value) {
         if (value instanceof DoubleHolder){
             this.doubleValue /= ((DoubleHolder) value).getValue();
+        }
+        if (value instanceof IntHolder){
+            this.doubleValue /= ((IntHolder)value).getValue();
         }
         return this;
 
@@ -120,5 +118,10 @@ public class DoubleHolder extends Value{
     @Override
     public int hashCode() {
         return Objects.hash(doubleValue);
+    }
+
+    @Override
+    public int compareTo(Value o) {
+        return doubleValue.compareTo(((DoubleHolder)o).getValue());
     }
 }
