@@ -240,7 +240,7 @@ public class DataFrame {
 
         private boolean ifColumnIsNumeric(ArrayList column){
             return (column.get(0) instanceof IntHolder | column.get(0) instanceof DoubleHolder | column.get(0)
-                    instanceof FloatHolder);
+                    instanceof FloatHolder | column.get(0) instanceof DateTimeHolder);
         }
 
         @Override
@@ -275,11 +275,11 @@ public class DataFrame {
                 row.clear();
                 for(ArrayList<? extends Value> column: data.dataFrame){
                     if(ifColumnIsNumeric(column)){
-                        sum = column.get(0);
+                        sum = (Value) column.get(0).clone();
 
                         for(rowIterator=0; rowIterator<column.size(); rowIterator++){
                             if(rowIterator!=0){
-                                sum.add(column.get(rowIterator));
+                                sum.add((Value)column.get(rowIterator).clone());
                             }
                         }
                         row.add(sum.div(new IntHolder(rowIterator)));
@@ -293,8 +293,24 @@ public class DataFrame {
 
         @Override
         public DataFrame mean() {
+            ArrayList<Value> rowOfMeans;
+            int index;
             for (DataFrame data: listOfSplitDataFrames){
-                output.addRow(meanOfColumn(data));
+                rowOfMeans = new ArrayList<>(meanOfColumn(data));
+                row.clear();
+                index=0;
+                for(ArrayList<? extends Value> column: data.dataFrame){
+                    if(Arrays.stream(namesToGroupBy).anyMatch(names[index]::equals)){
+                        row.add(column.get(0));
+                    }
+                    else{
+                            row.add(rowOfMeans.get(index));
+
+                    }
+                    index++;
+                }
+
+                output.addRow(row);
             }
 
             return output;
@@ -305,30 +321,42 @@ public class DataFrame {
             ArrayList<Value> rowOfMeans;
             Value sum;
             Value distance;
-            int index=0;
-            int rowIterator=0;
+            Value mean;
+            Value val;
+            int index;
+            int rowIterator;
             for (DataFrame data: listOfSplitDataFrames){
-                rowOfMeans = meanOfColumn(data);
+                rowOfMeans = new ArrayList<>(meanOfColumn(data));
+                row.clear();
+                index=0;
                 for(ArrayList<? extends Value> column: data.dataFrame){
-                    if(Arrays.stream(namesToGroupBy).anyMatch(names[index++]::equals)){
-                        row.add(column.get(0));
+                    if(Arrays.stream(namesToGroupBy).anyMatch(names[index]::equals)){
+                        row.add((Value)column.get(0).clone());
                     }
                     else{
                         if(rowOfMeans.get(index)!=null){
-                            distance= column.get(rowIterator).sub(rowOfMeans.get(rowIterator));
-                            sum = distance.mul(distance);
+                            mean = (Value) rowOfMeans.get(index).clone();
+                            val = (Value) column.get(0).clone();
+                            distance = val.sub(mean);
+                            sum = (Value) distance.clone();
+                            sum = sum.mul(sum);
                             for(rowIterator=0; rowIterator<column.size(); rowIterator++){
                                 if(rowIterator!=0){
-                                    distance= column.get(rowIterator).sub(rowOfMeans.get(rowIterator));
+                                    val = (Value) column.get(rowIterator).clone();
+                                    distance = val.sub(mean);
                                     sum.add(distance.mul(distance));
                                 }
                             }
-                            row.add((sum.div(new IntHolder(rowIterator))).pow(new DoubleHolder(0.5)));
+                            if(rowIterator<=1){
+                                rowIterator=2;
+                            }
+                            row.add(sum.div(new IntHolder(rowIterator-1)).pow(new DoubleHolder(0.5)));
                         }
                         else {
                             row.add(null);
                         }
                     }
+                    index++;
                 }
 
                 output.addRow(row);
@@ -368,30 +396,42 @@ public class DataFrame {
             ArrayList<Value> rowOfMeans;
             Value sum;
             Value distance;
-            int index=0;
-            int rowIterator=0;
+            Value mean;
+            Value val;
+            int index;
+            int rowIterator;
             for (DataFrame data: listOfSplitDataFrames){
-                rowOfMeans = meanOfColumn(data);
+                rowOfMeans = new ArrayList<>(meanOfColumn(data));
+                row.clear();
+                index=0;
                 for(ArrayList<? extends Value> column: data.dataFrame){
-                    if(Arrays.stream(namesToGroupBy).anyMatch(names[index++]::equals)){
-                        row.add(column.get(0));
+                    if(Arrays.stream(namesToGroupBy).anyMatch(names[index]::equals)){
+                        row.add((Value)column.get(0).clone());
                     }
                     else{
                         if(rowOfMeans.get(index)!=null){
-                            distance= column.get(rowIterator).sub(rowOfMeans.get(rowIterator));
-                            sum = distance.mul(distance);
+                            mean = (Value) rowOfMeans.get(index).clone();
+                            val = (Value) column.get(0).clone();
+                            distance = val.sub(mean);
+                            sum = (Value) distance.clone();
+                            sum = sum.mul(sum);
                             for(rowIterator=0; rowIterator<column.size(); rowIterator++){
                                 if(rowIterator!=0){
-                                    distance= column.get(rowIterator).sub(rowOfMeans.get(rowIterator));
+                                    val = (Value) column.get(rowIterator).clone();
+                                    distance = val.sub(mean);
                                     sum.add(distance.mul(distance));
                                 }
                             }
-                            row.add(sum.div(new IntHolder(rowIterator)));
+                            if(rowIterator<=1){
+                                rowIterator=2;
+                            }
+                            row.add(sum.div(new IntHolder(rowIterator-1)));
                         }
                         else {
                             row.add(null);
                         }
                     }
+                    index++;
                 }
 
                 output.addRow(row);
@@ -401,7 +441,21 @@ public class DataFrame {
 
         @Override
         public DataFrame apply(Applyable a) {
-            return null;
+            DataFrame output = new DataFrame(names,types);
+
+            for(DataFrame df: listOfSplitDataFrames){
+                try {
+                    DataFrame oneOfSplitData = a.apply((DataFrame) df.clone());
+                    for(int rowIterator=0; rowIterator<df.names.length; rowIterator++){
+                        output.addRow(oneOfSplitData.getRow(rowIterator));
+                    }
+                }
+                catch(CloneNotSupportedException e){
+                    e.printStackTrace();
+                }
+
+            }
+            return output;
         }
     }
 

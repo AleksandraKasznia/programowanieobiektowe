@@ -19,6 +19,16 @@ public abstract class Value implements Cloneable,Comparable<Value>{
     public abstract Value create(String s);
     public abstract Object getValue();
 
+    public Object clone(){
+        try{
+            return super.clone();
+        }
+        catch (CloneNotSupportedException e){
+            return null;
+        }
+
+    }
+
     public static ValueBuilder builder(Class<? extends Value> type){
         return new ValueBuilder(type);
     }
