@@ -19,18 +19,23 @@ public class SparseDataFrame extends DataFrame {
     public SparseDataFrame(DataFrame df, String hide){
         super(df);
         numberOfColumns = names.length;
-        sizeOfColumn = df.get(df.names[0]).size();
-        toHide = hide;
-        sparseDataFrame = new ArrayList<>();
+        try {
+            sizeOfColumn = df.get(df.names[0]).size();
+            toHide = hide;
+            sparseDataFrame = new ArrayList<>();
 
-        for(int columnIterator=0; columnIterator<numberOfColumns; columnIterator++){
-            ArrayList temp = df.get(names[columnIterator]);
-            sparseDataFrame.add(new ArrayList<>(1));
-            for(int rowIterator=0; rowIterator<temp.size(); rowIterator++){
-                if(!(temp.get(rowIterator).toString()).equals(toHide)){
-                    sparseDataFrame.get(columnIterator).add(new CooValue(rowIterator,(Value)temp.get(rowIterator)));
+            for (int columnIterator = 0; columnIterator < numberOfColumns; columnIterator++) {
+                ArrayList temp = df.get(names[columnIterator]);
+                sparseDataFrame.add(new ArrayList<>(1));
+                for (int rowIterator = 0; rowIterator < temp.size(); rowIterator++) {
+                    if (!(temp.get(rowIterator).toString()).equals(toHide)) {
+                        sparseDataFrame.get(columnIterator).add(new CooValue(rowIterator, (Value) temp.get(rowIterator)));
+                    }
                 }
             }
+        }
+        catch (CustomException e){
+            e.printStackTrace();
         }
     }
 

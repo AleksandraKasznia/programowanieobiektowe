@@ -4,10 +4,9 @@ import java.util.Date;
 import java.util.LinkedList;
 
 public class Main {
-    public static void main(String[] argv)throws CustomException{
+    public static void main(String[] argv){
         DataFrame testdata = new DataFrame("test.csv",new Class[]{StringHolder.class, FloatHolder.class, FloatHolder.class, FloatHolder.class},true);
-        String[] str = new String[]{"id"};
-        testdata = testdata.groupby(str).std();
+        testdata.divideColumnByColumn("total","val");
         int k =1;
     }
 }

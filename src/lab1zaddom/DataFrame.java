@@ -1,5 +1,6 @@
 package lab1zaddom;
 
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -7,7 +8,7 @@ import java.io.*;
 import java.util.stream.Collectors;
 
 
-public class DataFrame {
+public class DataFrame implements Cloneable{
     ArrayList<ArrayList> dataFrame;
     String[] names;
     Class<? extends Value>[] types;
@@ -15,10 +16,15 @@ public class DataFrame {
 
     public DataFrame(String[] names, Class<? extends Value>[] types){
         dataFrame = new ArrayList<>();
-        int size = names.length;
         this.names = names;
         this.types = types;
-        initiate(types);
+        try{
+            initiate(types);
+        }
+        catch(CustomException e){
+            e.printStackTrace();
+        }
+
     }
 
     DataFrame(String[] names, ArrayList<ArrayList> data){
@@ -54,8 +60,8 @@ public class DataFrame {
                     line = br.readLine();
                 }
             }
-        } catch (Exception exception){
-            exception.printStackTrace();
+        } catch (IOException | NumberFormatException | CustomException e){
+            e.printStackTrace();
         }
 
 
@@ -65,17 +71,17 @@ public class DataFrame {
         return dataFrame.get(0).size();
     }
 
-    ArrayList get(String colname){
+    ArrayList get(String colname)throws CustomException{
         int i;
         for (i=0; i<names.length; i++){
             if (names[i].equals(colname)){
                 return dataFrame.get(i);
             }
         }
-        return null;
+        throw new CustomException("There is no such column");
     }
 
-    DataFrame get(String[] cols, boolean copy){
+    DataFrame get(String[] cols, boolean copy) throws CustomException{
         ArrayList list = new ArrayList();
         for (String col : cols) {
             for(int x =0; x<names.length; x++){
@@ -83,6 +89,9 @@ public class DataFrame {
                     list.add(copy?dataFrame.get(x).clone():dataFrame.get(x));
                 }
             }
+        }
+        if(list.size() == 0){
+            throw new CustomException("No such column");
         }
         return new DataFrame(cols, list);
     }
@@ -125,7 +134,7 @@ public class DataFrame {
         return new DataFrame(names, df);
     }
 
-    void initiate(Class<? extends Value>[] v){
+    void initiate(Class<? extends Value>[] v) throws CustomException{
         if(v.length == names.length){
                 for(int columnIterator=0; columnIterator<names.length; columnIterator++) {
                     if (Value.class.isAssignableFrom(v[columnIterator])) {
@@ -147,24 +156,34 @@ public class DataFrame {
 
                     }
                     else{
-                        System.out.print("Wrong type");
+                        throw new CustomException("Wrong type of input");
                     }
                 }
         }
+        else{
+            throw new CustomException("Number of names must be equal to number of types");
+        }
     }
 
-    void add(String [] content){
-        ArrayList <Value> values = new ArrayList<Value>();
-        try{
-            for(int columnIterator=0; columnIterator<names.length; columnIterator++){
+    void add(String [] content) throws NumberFormatException, CustomException{
+        ArrayList <Value> values = new ArrayList<>();
+        if(content.length > names.length){
+            throw new CustomException("Too many arguments to add");
+        }
+        if(content.length < names.length){
+            throw new CustomException("Too few arguments to add");
+        }
+        try {
+            for (int columnIterator = 0; columnIterator < names.length; columnIterator++) {
                 values.add(Value.builder(types[columnIterator]).build(content[columnIterator]));
             }
-            addRow(values);
         }
-        catch(NumberFormatException e){
-            System.out.print("Values in file of different types than given types");
+        catch(InstantiationException | IllegalAccessException | CustomException | InvocationTargetException | NoSuchMethodException e){
+            e.printStackTrace();
+            values.add(null);
         }
 
+            addRow(values);
     }
 
     void addRow(ArrayList row){
@@ -173,28 +192,186 @@ public class DataFrame {
         }
     }
 
-    LinkedList<DataFrame> groupbyOne(String colname){
-        LinkedList<DataFrame> splitDataFrame = new LinkedList<DataFrame>();
-        Set<Value> uniqueValues = new HashSet(get(colname));
-        Iterator<Value> it = uniqueValues.iterator();
-        while(it.hasNext()){
-            splitDataFrame.add(createDataFrameForGivenValue(it.next(),colname));
+    void addToColumn(String columnName, Value toAdd){
+        try{
+            ArrayList column = get(columnName);
+            if(!ifColumnIsNumeric(column)){
+                throw new CustomException("Values are not numeric in this column");
+            }
+            int columnSize = column.size();
+            for(int iterator=0; iterator<columnSize; iterator++){
+                ((Value) column.get(iterator)).add(toAdd);
+            }
+        }catch (CustomException e){
+            e.printStackTrace();
         }
+
+    }
+
+    void substractFromColumn(String columnName, Value toAdd){
+        try{
+            ArrayList column = get(columnName);
+            if(!ifColumnIsNumeric(column)){
+                throw new CustomException("Values are not numeric in this column");
+            }
+            int columnSize = column.size();
+            for(int iterator=0; iterator<columnSize; iterator++){
+                ((Value) column.get(iterator)).sub(toAdd);
+            }
+        }catch (CustomException e){
+            e.printStackTrace();
+        }
+
+    }
+
+    void multiplyColumn(String columnName, Value toAdd){
+        try{
+            ArrayList column = get(columnName);
+            if(!ifColumnIsNumeric(column)){
+                throw new CustomException("Values are not numeric in this column");
+            }
+            int columnSize = column.size();
+            for(int iterator=0; iterator<columnSize; iterator++){
+                ((Value) column.get(iterator)).mul(toAdd);
+            }
+        }catch (CustomException e){
+            e.printStackTrace();
+        }
+
+    }
+
+    void divideColumn(String columnName, Value toAdd){
+        try{
+            ArrayList column = get(columnName);
+            if(!ifColumnIsNumeric(column)){
+                throw new CustomException("Values are not numeric in this column");
+            }
+            int columnSize = column.size();
+            for(int iterator=0; iterator<columnSize; iterator++){
+                ((Value) column.get(iterator)).div(toAdd);
+            }
+        }catch (CustomException e){
+            e.printStackTrace();
+        }
+
+    }
+
+    void addColumToColumn(String columnToAddTo ,String columnToAdd){
+        try{
+            ArrayList columnTAT = get(columnToAddTo);
+            ArrayList columnTA = get(columnToAdd);
+            if(!ifColumnIsNumeric(columnTA) || !ifColumnIsNumeric(columnTAT)){
+                throw new CustomException("Those are not numeric columns");
+            }
+            int columnTATSize = columnTAT.size();
+            int columnTASize = columnTA.size();
+            if(columnTASize != columnTATSize){
+                throw new CustomException("Columns are different sizes");
+            }
+            for(int iterator=0; iterator<columnTASize; iterator++){
+                Value toAdd = (Value)((Value)columnTA.get(iterator)).clone();
+                ((Value)columnTAT.get(iterator)).add(toAdd);
+            }
+        }catch (CustomException | CloneNotSupportedException e){
+            e.printStackTrace();
+        }
+
+    }
+
+    void substractColumnFromColumn(String columnToSubstractFrom ,String columnToSubstract){
+        try{
+            ArrayList columnTSF = get(columnToSubstractFrom);
+            ArrayList columnTS = get(columnToSubstract);
+            if(!ifColumnIsNumeric(columnTS) || !ifColumnIsNumeric(columnTSF)){
+                throw new CustomException("Those are not numeric columns");
+            }
+            int columnTAFSize = columnTSF.size();
+            int columnTSSize = columnTS.size();
+            if(columnTSSize != columnTAFSize){
+                throw new CustomException("Columns are different sizes");
+            }
+            for(int iterator=0; iterator<columnTSSize; iterator++){
+                Value toAdd = (Value)((Value)columnTS.get(iterator)).clone();
+                ((Value)columnTSF.get(iterator)).sub(toAdd);
+            }
+        }catch (CustomException | CloneNotSupportedException e){
+            e.printStackTrace();
+        }
+
+    }
+
+    void multiplyColumByColumn(String columnToBeMultipied ,String columnToMultiplyBy){
+        try{
+            ArrayList columnTBM = get(columnToBeMultipied);
+            ArrayList columnTMB = get(columnToMultiplyBy);
+            if(!ifColumnIsNumeric(columnTMB) || !ifColumnIsNumeric(columnTBM)){
+                throw new CustomException("Those are not numeric columns");
+            }
+            int columnTBMSize = columnTBM.size();
+            int columnTMBSize = columnTMB.size();
+            if(columnTMBSize != columnTBMSize){
+                throw new CustomException("Columns are different sizes");
+            }
+            for(int iterator=0; iterator<columnTMBSize; iterator++){
+                Value toAdd = (Value)((Value)columnTMB.get(iterator)).clone();
+                ((Value)columnTBM.get(iterator)).mul(toAdd);
+            }
+        }catch (CustomException | CloneNotSupportedException e){
+            e.printStackTrace();
+        }
+
+    }
+
+    void divideColumnByColumn(String columnToBeDivided ,String columnToDivideBy){
+        try{
+            ArrayList columnTBD = get(columnToBeDivided);
+            ArrayList columnTDB = get(columnToDivideBy);
+            if(!ifColumnIsNumeric(columnTDB) || !ifColumnIsNumeric(columnTBD)){
+                throw new CustomException("Those are not numeric columns");
+            }
+            int columnTBMDSize = columnTBD.size();
+            int columnTDBSize = columnTDB.size();
+            if(columnTDBSize != columnTBMDSize){
+                throw new CustomException("Columns are different sizes");
+            }
+            for(int iterator=0; iterator<columnTDBSize; iterator++){
+                Value toAdd = (Value)((Value)columnTDB.get(iterator)).clone();
+                ((Value)columnTBD.get(iterator)).div(toAdd);
+            }
+        }catch (CustomException | CloneNotSupportedException e){
+            e.printStackTrace();
+        }
+
+    }
+
+    LinkedList<DataFrame> groupbyOne(String colname) throws CustomException{
+        LinkedList<DataFrame> splitDataFrame = new LinkedList<DataFrame>();
+            Set<Value> uniqueValues = new HashSet(get(colname));
+            Iterator<Value> it = uniqueValues.iterator();
+            while(it.hasNext()){
+                splitDataFrame.add(createDataFrameForGivenValue(it.next(),colname));
+            }
         return splitDataFrame;
     }
 
     SplitData groupby(String[] colnames){
         LinkedList<LinkedList<DataFrame>> tmp = new LinkedList <>();
-        LinkedList<DataFrame> splitDataFrame = new LinkedList<DataFrame>(groupbyOne(colnames[0]));
 
-        for(int colnamesIterator=1; colnamesIterator<colnames.length; colnamesIterator++){
-            for(int holderIterator=0; holderIterator<splitDataFrame.size(); holderIterator++){
-                tmp.add(splitDataFrame.get(holderIterator).groupbyOne(colnames[colnamesIterator]));
+        try {
+            LinkedList<DataFrame> splitDataFrame = new LinkedList<DataFrame>(groupbyOne(colnames[0]));
+            for (int colnamesIterator = 1; colnamesIterator < colnames.length; colnamesIterator++) {
+                for (int holderIterator = 0; holderIterator < splitDataFrame.size(); holderIterator++) {
+                    tmp.add(splitDataFrame.get(holderIterator).groupbyOne(colnames[colnamesIterator]));
+                }
+                splitDataFrame = flattenLinkedList(tmp);
+                tmp.clear();
             }
-            splitDataFrame = flattenLinkedList(tmp);
-            tmp.clear();
+            return new SplitData(colnames,splitDataFrame);
         }
-        return new SplitData(colnames,splitDataFrame);
+        catch(CustomException e){
+            e.printStackTrace();
+            return null;
+        }
     }
 
     DataFrame createDataFrameForGivenValue(Value value, String colname){
@@ -221,7 +398,12 @@ public class DataFrame {
         return flattenList;
     }
 
-    public class SplitData implements GroupBy{
+    private boolean ifColumnIsNumeric(ArrayList column){
+        return (column.get(0) instanceof IntHolder | column.get(0) instanceof DoubleHolder | column.get(0)
+                instanceof FloatHolder | column.get(0) instanceof DateTimeHolder);
+    }
+
+    public class SplitData implements GroupBy {
         LinkedList<DataFrame> listOfSplitDataFrames;
         DataFrame output;
         ArrayList<Value> row;
@@ -236,11 +418,6 @@ public class DataFrame {
             namesOfOutput = new ArrayList<>();
             typesOfOutput = new ArrayList<>();
             output = new DataFrame(names, types);
-        }
-
-        private boolean ifColumnIsNumeric(ArrayList column){
-            return (column.get(0) instanceof IntHolder | column.get(0) instanceof DoubleHolder | column.get(0)
-                    instanceof FloatHolder | column.get(0) instanceof DateTimeHolder);
         }
 
         @Override
@@ -269,7 +446,7 @@ public class DataFrame {
             return output;
         }
 
-        public ArrayList<Value> meanOfColumn(DataFrame data){
+        public ArrayList<Value> meanOfColumn(DataFrame data) throws CloneNotSupportedException{
             Value sum;
             int rowIterator;
                 row.clear();
@@ -282,7 +459,12 @@ public class DataFrame {
                                 sum.add((Value)column.get(rowIterator).clone());
                             }
                         }
-                        row.add(sum.div(new IntHolder(rowIterator)));
+                        try {
+                            row.add(sum.div(new IntHolder(rowIterator)));
+                        }
+                        catch(CustomException e){
+                            e.printStackTrace();
+                        }
                     }
                     else{
                         row.add(null);
@@ -295,22 +477,26 @@ public class DataFrame {
         public DataFrame mean() {
             ArrayList<Value> rowOfMeans;
             int index;
-            for (DataFrame data: listOfSplitDataFrames){
-                rowOfMeans = new ArrayList<>(meanOfColumn(data));
-                row.clear();
-                index=0;
-                for(ArrayList<? extends Value> column: data.dataFrame){
-                    if(Arrays.stream(namesToGroupBy).anyMatch(names[index]::equals)){
-                        row.add(column.get(0));
-                    }
-                    else{
+            try {
+                for (DataFrame data : listOfSplitDataFrames) {
+                    rowOfMeans = new ArrayList<>(meanOfColumn(data));
+                    row.clear();
+                    index = 0;
+                    for (ArrayList<? extends Value> column : data.dataFrame) {
+                        if (Arrays.stream(namesToGroupBy).anyMatch(names[index]::equals)) {
+                            row.add(column.get(0));
+                        } else {
                             row.add(rowOfMeans.get(index));
 
+                        }
+                        index++;
                     }
-                    index++;
-                }
 
-                output.addRow(row);
+                    output.addRow(row);
+                }
+            }
+            catch (CloneNotSupportedException e){
+                e.printStackTrace();
             }
 
             return output;
@@ -325,41 +511,49 @@ public class DataFrame {
             Value val;
             int index;
             int rowIterator;
-            for (DataFrame data: listOfSplitDataFrames){
-                rowOfMeans = new ArrayList<>(meanOfColumn(data));
-                row.clear();
-                index=0;
-                for(ArrayList<? extends Value> column: data.dataFrame){
-                    if(Arrays.stream(namesToGroupBy).anyMatch(names[index]::equals)){
-                        row.add((Value)column.get(0).clone());
-                    }
-                    else{
-                        if(rowOfMeans.get(index)!=null){
-                            mean = (Value) rowOfMeans.get(index).clone();
-                            val = (Value) column.get(0).clone();
-                            distance = val.sub(mean);
-                            sum = (Value) distance.clone();
-                            sum = sum.mul(sum);
-                            for(rowIterator=0; rowIterator<column.size(); rowIterator++){
-                                if(rowIterator!=0){
-                                    val = (Value) column.get(rowIterator).clone();
-                                    distance = val.sub(mean);
-                                    sum.add(distance.mul(distance));
+            try {
+                for (DataFrame data : listOfSplitDataFrames) {
+                    rowOfMeans = new ArrayList<>(meanOfColumn(data));
+                    row.clear();
+                    index = 0;
+                    for (ArrayList<? extends Value> column : data.dataFrame) {
+                        if (Arrays.stream(namesToGroupBy).anyMatch(names[index]::equals)) {
+                            row.add((Value) column.get(0).clone());
+                        } else {
+                            if (rowOfMeans.get(index) != null) {
+                                mean = (Value) rowOfMeans.get(index).clone();
+                                val = (Value) column.get(0).clone();
+                                distance = val.sub(mean);
+                                sum = (Value) distance.clone();
+                                sum = sum.mul(sum);
+                                for (rowIterator = 0; rowIterator < column.size(); rowIterator++) {
+                                    if (rowIterator != 0) {
+                                        val = (Value) column.get(rowIterator).clone();
+                                        distance = val.sub(mean);
+                                        sum.add(distance.mul(distance));
+                                    }
                                 }
+                                if (rowIterator <= 1) {
+                                    rowIterator = 2;
+                                }
+                                try {
+                                    row.add(sum.div(new IntHolder(rowIterator - 1)).pow(new DoubleHolder(0.5)));
+                                }
+                                catch(CustomException e){
+                                    e.printStackTrace();
+                                }
+                            } else {
+                                row.add(null);
                             }
-                            if(rowIterator<=1){
-                                rowIterator=2;
-                            }
-                            row.add(sum.div(new IntHolder(rowIterator-1)).pow(new DoubleHolder(0.5)));
                         }
-                        else {
-                            row.add(null);
-                        }
+                        index++;
                     }
-                    index++;
-                }
 
-                output.addRow(row);
+                    output.addRow(row);
+                }
+            }
+            catch(CloneNotSupportedException e){
+                e.printStackTrace();
             }
             return output;
         }
@@ -400,41 +594,49 @@ public class DataFrame {
             Value val;
             int index;
             int rowIterator;
-            for (DataFrame data: listOfSplitDataFrames){
-                rowOfMeans = new ArrayList<>(meanOfColumn(data));
-                row.clear();
-                index=0;
-                for(ArrayList<? extends Value> column: data.dataFrame){
-                    if(Arrays.stream(namesToGroupBy).anyMatch(names[index]::equals)){
-                        row.add((Value)column.get(0).clone());
-                    }
-                    else{
-                        if(rowOfMeans.get(index)!=null){
-                            mean = (Value) rowOfMeans.get(index).clone();
-                            val = (Value) column.get(0).clone();
-                            distance = val.sub(mean);
-                            sum = (Value) distance.clone();
-                            sum = sum.mul(sum);
-                            for(rowIterator=0; rowIterator<column.size(); rowIterator++){
-                                if(rowIterator!=0){
-                                    val = (Value) column.get(rowIterator).clone();
-                                    distance = val.sub(mean);
-                                    sum.add(distance.mul(distance));
+            try {
+                for (DataFrame data : listOfSplitDataFrames) {
+                    rowOfMeans = new ArrayList<>(meanOfColumn(data));
+                    row.clear();
+                    index = 0;
+                    for (ArrayList<? extends Value> column : data.dataFrame) {
+                        if (Arrays.stream(namesToGroupBy).anyMatch(names[index]::equals)) {
+                            row.add((Value) column.get(0).clone());
+                        } else {
+                            if (rowOfMeans.get(index) != null) {
+                                mean = (Value) rowOfMeans.get(index).clone();
+                                val = (Value) column.get(0).clone();
+                                distance = val.sub(mean);
+                                sum = (Value) distance.clone();
+                                sum = sum.mul(sum);
+                                for (rowIterator = 0; rowIterator < column.size(); rowIterator++) {
+                                    if (rowIterator != 0) {
+                                        val = (Value) column.get(rowIterator).clone();
+                                        distance = val.sub(mean);
+                                        sum.add(distance.mul(distance));
+                                    }
                                 }
+                                if (rowIterator <= 1) {
+                                    rowIterator = 2;
+                                }
+                                try {
+                                    row.add(sum.div(new IntHolder(rowIterator - 1)));
+                                }
+                                catch(CustomException e){
+                                    e.printStackTrace();
+                                }
+                            } else {
+                                row.add(null);
                             }
-                            if(rowIterator<=1){
-                                rowIterator=2;
-                            }
-                            row.add(sum.div(new IntHolder(rowIterator-1)));
                         }
-                        else {
-                            row.add(null);
-                        }
+                        index++;
                     }
-                    index++;
-                }
 
-                output.addRow(row);
+                    output.addRow(row);
+                }
+            }
+            catch(CloneNotSupportedException e){
+                e.printStackTrace();
             }
             return output;
         }

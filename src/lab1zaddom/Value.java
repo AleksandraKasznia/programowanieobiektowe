@@ -8,7 +8,7 @@ public abstract class Value implements Cloneable,Comparable<Value>{
     public abstract Value add(Value value);
     public abstract Value sub(Value value);
     public abstract Value mul(Value value);
-    public abstract Value div(Value value);
+    public abstract Value div(Value value)throws CustomException;
     public abstract Value pow(Value value);
     public abstract boolean eq(Value value);
     public abstract boolean lte(Value value);
@@ -16,17 +16,11 @@ public abstract class Value implements Cloneable,Comparable<Value>{
     public abstract boolean neq(Value value);
     public abstract boolean equals(Object other);
     public abstract int hashCode();
-    public abstract Value create(String s);
+    public abstract Value create(String s) throws CustomException;
     public abstract Object getValue();
 
-    public Object clone(){
-        try{
-            return super.clone();
-        }
-        catch (CloneNotSupportedException e){
-            return null;
-        }
-
+    public Object clone()throws CloneNotSupportedException{
+        return super.clone();
     }
 
     public static ValueBuilder builder(Class<? extends Value> type){
@@ -43,13 +37,9 @@ public abstract class Value implements Cloneable,Comparable<Value>{
             classOfValue = classToBuild;
         }
 
-        public Value build(String content) {
-            try {
+        public Value build(String content) throws InstantiationException, IllegalAccessException,
+                InvocationTargetException, NoSuchMethodException, CustomException{
                 return (Value) classOfValue.getMethod("create", String.class).invoke(classOfValue.newInstance(), content);
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-                e.printStackTrace();
-            }
-            return null;
         }
     }
 }

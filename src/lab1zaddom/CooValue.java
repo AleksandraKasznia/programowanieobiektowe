@@ -40,7 +40,7 @@ public class CooValue extends Value{
     }
 
     @Override
-    public Value div(Value value) {
+    public Value div(Value value) throws CustomException{
         content = content.div(value);
         return this;
     }
@@ -82,7 +82,7 @@ public class CooValue extends Value{
     }
 
     @Override
-    public CooValue create(String s) {
+    public CooValue create(String s) throws CustomException{
         return new CooValue(index,content.create(s));
     }
 

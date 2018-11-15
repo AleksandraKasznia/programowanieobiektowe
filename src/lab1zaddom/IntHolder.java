@@ -27,6 +27,12 @@ public class IntHolder extends Value {
         if (value instanceof IntHolder){
             this.intValue += ((IntHolder) value).getValue();
         }
+        if (value instanceof DoubleHolder){
+            this.intValue = (int)(intValue + ((DoubleHolder) value).getValue());
+        }
+        if (value instanceof FloatHolder){
+            this.intValue = (int)(intValue + ((FloatHolder) value).getValue());
+        }
         return this;
     }
 
@@ -34,6 +40,12 @@ public class IntHolder extends Value {
     public Value sub(Value value) {
         if (value instanceof IntHolder){
             this.intValue -= ((IntHolder) value).getValue();
+        }
+        if (value instanceof DoubleHolder){
+            this.intValue = (int)(intValue - ((DoubleHolder) value).getValue());
+        }
+        if (value instanceof FloatHolder){
+            this.intValue = (int)(intValue - ((FloatHolder) value).getValue());
         }
         return this;
 
@@ -44,14 +56,29 @@ public class IntHolder extends Value {
         if (value instanceof IntHolder){
             this.intValue *= ((IntHolder) value).getValue();
         }
+        if (value instanceof DoubleHolder){
+            this.intValue = (int)(intValue * ((DoubleHolder) value).getValue());
+        }
+        if (value instanceof FloatHolder){
+            this.intValue = (int)(intValue * ((FloatHolder) value).getValue());
+        }
         return this;
 
     }
 
     @Override
-    public Value div(Value value) {
+    public Value div(Value value) throws CustomException{
         if (value instanceof IntHolder){
+            if(((IntHolder) value).getValue() == 0) throw new CustomException("You can't divide by 0");
             this.intValue /= ((IntHolder) value).getValue();
+        }
+        if (value instanceof DoubleHolder){
+            if(((DoubleHolder) value).getValue() == 0) throw new CustomException("You can't divide by 0");
+            this.intValue = (int)(intValue / ((DoubleHolder) value).getValue());
+        }
+        if (value instanceof FloatHolder){
+            if(((FloatHolder) value).getValue() == 0) throw new CustomException("You can't divide by 0");
+            this.intValue = (int)(intValue / ((FloatHolder) value).getValue());
         }
         return this;
 
@@ -82,6 +109,12 @@ public class IntHolder extends Value {
         if (value instanceof IntHolder) {
             return this.intValue < ((IntHolder) value).getValue();
         }
+        if (value instanceof DoubleHolder){
+            return this.intValue < ((DoubleHolder)value).getValue();
+        }
+        if (value instanceof FloatHolder){
+            return this.intValue < ((FloatHolder)value).getValue();
+        }
         return false;
     }
 
@@ -89,6 +122,12 @@ public class IntHolder extends Value {
     public boolean gte(Value value) {
         if (value instanceof IntHolder) {
             return this.intValue > ((IntHolder) value).getValue();
+        }
+        if (value instanceof DoubleHolder){
+            return this.intValue > ((DoubleHolder)value).getValue();
+        }
+        if (value instanceof FloatHolder){
+            return this.intValue > ((FloatHolder)value).getValue();
         }
         return false;
     }

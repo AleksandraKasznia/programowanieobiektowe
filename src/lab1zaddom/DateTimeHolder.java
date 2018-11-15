@@ -85,19 +85,20 @@ public class DateTimeHolder extends Value{
     }
 
     @Override
-    public DateTimeHolder create(String s){
+    public DateTimeHolder create(String s) throws CustomException{
         if(s.matches("\\d{4}-\\d{2}-\\d{2}")){
             DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
             try{
                 dateValue = format.parse(s);
             }
             catch (ParseException e){
+                e.printStackTrace();
                 return null;
             }
             return this;
 
         }
-        return null;
+        throw new CustomException("Wrong format of date change it to: yyyy-mm-dd");
     }
 
     @Override
