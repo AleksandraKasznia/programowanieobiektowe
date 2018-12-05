@@ -67,7 +67,7 @@ public class DataFrame implements Cloneable{
 
     }
 
-    int Size(){
+    int size(){
         return dataFrame.get(0).size();
     }
 
