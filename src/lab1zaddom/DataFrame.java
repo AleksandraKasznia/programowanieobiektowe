@@ -5,6 +5,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.io.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 
@@ -12,6 +15,8 @@ public class DataFrame implements Cloneable{
     ArrayList<ArrayList> dataFrame;
     String[] names;
     Class<? extends Value>[] types;
+    ExecutorService es = Executors.newCachedThreadPool();
+    Set<GroupByThread> goupbyThreads = new HashSet<>();
 
 
     public DataFrame(String[] names, Class<? extends Value>[] types){
@@ -361,14 +366,19 @@ public class DataFrame implements Cloneable{
             LinkedList<DataFrame> splitDataFrame = new LinkedList<DataFrame>(groupbyOne(colnames[0]));
             for (int colnamesIterator = 1; colnamesIterator < colnames.length; colnamesIterator++) {
                 for (int holderIterator = 0; holderIterator < splitDataFrame.size(); holderIterator++) {
-                    tmp.add(splitDataFrame.get(holderIterator).groupbyOne(colnames[colnamesIterator]));
+                    es.execute(new GroupByThread(colnames[colnamesIterator],splitDataFrame.get(holderIterator),tmp));
+
                 }
-                splitDataFrame = flattenLinkedList(tmp);
-                tmp.clear();
+                es.shutdown();
+                boolean finished = es.awaitTermination(1, TimeUnit.MINUTES);
+                if(finished) {
+                    splitDataFrame = new LinkedList<DataFrame>(flattenLinkedList(tmp));
+                    tmp.clear();
+                }
             }
             return new SplitData(colnames,splitDataFrame);
         }
-        catch(CustomException e){
+        catch(CustomException | InterruptedException e){
             e.printStackTrace();
             return null;
         }
@@ -398,7 +408,7 @@ public class DataFrame implements Cloneable{
         return flattenList;
     }
 
-    private boolean ifColumnIsNumeric(ArrayList column){
+    public boolean ifColumnIsNumeric(ArrayList column){
         return (column.get(0) instanceof IntHolder | column.get(0) instanceof DoubleHolder | column.get(0)
                 instanceof FloatHolder | column.get(0) instanceof DateTimeHolder);
     }
@@ -410,6 +420,7 @@ public class DataFrame implements Cloneable{
         ArrayList<Class> typesOfOutput;
         String[] namesToGroupBy;
         ArrayList<String> namesOfOutput;
+        ExecutorService esSplitData = Executors.newCachedThreadPool();
 
         SplitData(String[] colnames, LinkedList<DataFrame> listOfSplitDataFrames){
             namesToGroupBy = colnames;
@@ -423,61 +434,39 @@ public class DataFrame implements Cloneable{
         @Override
         public DataFrame max() {
             for (DataFrame data: listOfSplitDataFrames){
-                row.clear();
-                for(ArrayList<? extends Value> column: data.dataFrame){
-                    row.add(Collections.max(column));
-                }
-                output.addRow(row);
+                esSplitData.execute(new MaxThread(data,output));
             }
-
+            esSplitData.shutdownNow();
             return output;
         }
 
         @Override
         public DataFrame min() {
             for (DataFrame data: listOfSplitDataFrames){
-                row.clear();
-                for(ArrayList<? extends Value> column: data.dataFrame){
-                    row.add(Collections.min(column));
-                }
-                output.addRow(row);
+                esSplitData.execute(new MaxThread(data,output));
             }
-
+            esSplitData.shutdownNow();
             return output;
         }
 
-        public ArrayList<Value> meanOfColumn(DataFrame data) throws CloneNotSupportedException{
-            Value sum;
-            int rowIterator;
-                row.clear();
-                for(ArrayList<? extends Value> column: data.dataFrame){
-                    if(ifColumnIsNumeric(column)){
-                        sum = (Value) column.get(0).clone();
-
-                        for(rowIterator=0; rowIterator<column.size(); rowIterator++){
-                            if(rowIterator!=0){
-                                sum.add((Value)column.get(rowIterator).clone());
-                            }
-                        }
-                        try {
-                            row.add(sum.div(new IntHolder(rowIterator)));
-                        }
-                        catch(CustomException e){
-                            e.printStackTrace();
-                        }
-                    }
-                    else{
-                        row.add(null);
-                    }
-                }
-                return row;
+        public ArrayList<Value> meanOfColumn(DataFrame data){
+            row.clear();
+            ExecutorService esSplitData = Executors.newCachedThreadPool();
+            esSplitData.execute(new MeanThread(data,row));
+            esSplitData.shutdown();
+            try {
+                boolean finished = esSplitData.awaitTermination(1, TimeUnit.MINUTES);
+            }
+            catch (InterruptedException e){
+                e.printStackTrace();
+            }
+            return row;
         }
 
         @Override
         public DataFrame mean() {
             ArrayList<Value> rowOfMeans;
             int index;
-            try {
                 for (DataFrame data : listOfSplitDataFrames) {
                     rowOfMeans = new ArrayList<>(meanOfColumn(data));
                     row.clear();
@@ -487,17 +476,11 @@ public class DataFrame implements Cloneable{
                             row.add(column.get(0));
                         } else {
                             row.add(rowOfMeans.get(index));
-
                         }
                         index++;
                     }
-
                     output.addRow(row);
                 }
-            }
-            catch (CloneNotSupportedException e){
-                e.printStackTrace();
-            }
 
             return output;
         }
