@@ -488,79 +488,38 @@ public class DataFrame implements Cloneable{
         @Override
         public DataFrame std() {
             ArrayList<Value> rowOfMeans;
-            Value sum;
-            Value distance;
-            Value mean;
-            Value val;
             int index;
-            int rowIterator;
-            try {
                 for (DataFrame data : listOfSplitDataFrames) {
                     rowOfMeans = new ArrayList<>(meanOfColumn(data));
                     row.clear();
                     index = 0;
-                    for (ArrayList<? extends Value> column : data.dataFrame) {
-                        if (Arrays.stream(namesToGroupBy).anyMatch(names[index]::equals)) {
-                            row.add((Value) column.get(0).clone());
-                        } else {
-                            if (rowOfMeans.get(index) != null) {
-                                mean = (Value) rowOfMeans.get(index).clone();
-                                val = (Value) column.get(0).clone();
-                                distance = val.sub(mean);
-                                sum = (Value) distance.clone();
-                                sum = sum.mul(sum);
-                                for (rowIterator = 0; rowIterator < column.size(); rowIterator++) {
-                                    if (rowIterator != 0) {
-                                        val = (Value) column.get(rowIterator).clone();
-                                        distance = val.sub(mean);
-                                        sum.add(distance.mul(distance));
-                                    }
-                                }
-                                if (rowIterator <= 1) {
-                                    rowIterator = 2;
-                                }
-                                try {
-                                    row.add(sum.div(new IntHolder(rowIterator - 1)).pow(new DoubleHolder(0.5)));
-                                }
-                                catch(CustomException e){
-                                    e.printStackTrace();
-                                }
-                            } else {
-                                row.add(null);
-                            }
-                        }
-                        index++;
+                    ExecutorService esSplitData = Executors.newCachedThreadPool();
+                    esSplitData.execute(new StdThread(index, rowOfMeans, data, row, namesToGroupBy));
+                    esSplitData.shutdown();
+                    try {
+                        boolean finished = esSplitData.awaitTermination(1, TimeUnit.MINUTES);
                     }
-
+                    catch (InterruptedException e){
+                        e.printStackTrace();
+                    }
                     output.addRow(row);
                 }
-            }
-            catch(CloneNotSupportedException e){
-                e.printStackTrace();
-            }
             return output;
         }
 
         @Override
         public DataFrame sum() {
-            Value sum;
-            int rowIterator;
+
             for (DataFrame data: listOfSplitDataFrames){
                 row.clear();
-                for(ArrayList<? extends Value> column: data.dataFrame){
-                    if(ifColumnIsNumeric(column)){
-                        sum = column.get(0);
-
-                        for(rowIterator=0; rowIterator<column.size(); rowIterator++){
-                            if(rowIterator!=0){
-                                sum.add(column.get(rowIterator));
-                            }
-                        }
-                        row.add(sum);
-                    }
-                    else{
-                        row.add(null);
-                    }
+                ExecutorService esSplitData = Executors.newCachedThreadPool();
+                esSplitData.execute(new SumThread(data,row));
+                esSplitData.shutdown();
+                try {
+                    boolean finished = esSplitData.awaitTermination(1, TimeUnit.MINUTES);
+                }
+                catch (InterruptedException e){
+                    e.printStackTrace();
                 }
                 output.addRow(row);
             }
@@ -571,56 +530,24 @@ public class DataFrame implements Cloneable{
         @Override
         public DataFrame var() {
             ArrayList<Value> rowOfMeans;
-            Value sum;
-            Value distance;
-            Value mean;
-            Value val;
             int index;
-            int rowIterator;
-            try {
+
                 for (DataFrame data : listOfSplitDataFrames) {
                     rowOfMeans = new ArrayList<>(meanOfColumn(data));
                     row.clear();
                     index = 0;
-                    for (ArrayList<? extends Value> column : data.dataFrame) {
-                        if (Arrays.stream(namesToGroupBy).anyMatch(names[index]::equals)) {
-                            row.add((Value) column.get(0).clone());
-                        } else {
-                            if (rowOfMeans.get(index) != null) {
-                                mean = (Value) rowOfMeans.get(index).clone();
-                                val = (Value) column.get(0).clone();
-                                distance = val.sub(mean);
-                                sum = (Value) distance.clone();
-                                sum = sum.mul(sum);
-                                for (rowIterator = 0; rowIterator < column.size(); rowIterator++) {
-                                    if (rowIterator != 0) {
-                                        val = (Value) column.get(rowIterator).clone();
-                                        distance = val.sub(mean);
-                                        sum.add(distance.mul(distance));
-                                    }
-                                }
-                                if (rowIterator <= 1) {
-                                    rowIterator = 2;
-                                }
-                                try {
-                                    row.add(sum.div(new IntHolder(rowIterator - 1)));
-                                }
-                                catch(CustomException e){
-                                    e.printStackTrace();
-                                }
-                            } else {
-                                row.add(null);
-                            }
-                        }
-                        index++;
+                    ExecutorService esSplitData = Executors.newCachedThreadPool();
+                    esSplitData.execute(new VarThread(index, rowOfMeans, data, row, namesToGroupBy));
+                    esSplitData.shutdown();
+                    try {
+                        boolean finished = esSplitData.awaitTermination(1, TimeUnit.MINUTES);
+                    }
+                    catch (InterruptedException e){
+                        e.printStackTrace();
                     }
 
                     output.addRow(row);
                 }
-            }
-            catch(CloneNotSupportedException e){
-                e.printStackTrace();
-            }
             return output;
         }
 

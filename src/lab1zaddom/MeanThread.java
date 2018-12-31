@@ -35,9 +35,7 @@ public class MeanThread extends Thread {
             e.printStackTrace();
         }
         synchronized (row){
-            System.out.print(rowtmp);
             row.addAll(rowtmp);
-            System.out.print(row);
         }
     }
 }
