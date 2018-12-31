@@ -1,9 +1,10 @@
 package lab1zaddom;
 
+import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 
-public abstract class Value implements Cloneable,Comparable<Value>{
+public abstract class Value implements Cloneable,Comparable<Value>, Serializable {
     public abstract String toString();
     public abstract Value add(Value value);
     public abstract Value sub(Value value);

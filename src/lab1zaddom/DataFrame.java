@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 
-public class DataFrame implements Cloneable{
+public class DataFrame implements Cloneable, Serializable{
     ArrayList<ArrayList> dataFrame;
     String[] names;
     Class<? extends Value>[] types;
