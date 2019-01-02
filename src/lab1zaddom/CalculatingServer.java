@@ -1,11 +1,11 @@
 package lab1zaddom;
-
 import java.io.*;
 import java.net.*;
 
-public class Client {
+public class CalculatingServer {
     public static void main(String[] args) throws IOException {
 
+        int myport = 6666;
         Socket echoSocket = null;
         PrintWriter out = null;
         BufferedReader in = null;
@@ -24,19 +24,21 @@ public class Client {
             System.exit(1);
         }
 
-        BufferedReader stdIn = new BufferedReader(
-                new InputStreamReader(System.in));
-        String userInput;
+        String userInput = "port:" + myport;
 
-        System.out.println("Type a message: ");
-        while ((userInput = stdIn.readLine()) != null) {
             out.println(userInput);
             System.out.println("echo: " + in.readLine());
-        }
 
         out.close();
         in.close();
-        stdIn.close();
         echoSocket.close();
+        ServerSocket server = new ServerSocket(myport, 5);
+        Socket clientSocket = server.accept();
+        BufferedReader streamReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        String inputLine = streamReader.readLine();
+        System.out.println(inputLine);
+        streamReader.close();
+        server.close();
+
     }
 }

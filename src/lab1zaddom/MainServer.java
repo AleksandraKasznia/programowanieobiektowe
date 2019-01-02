@@ -6,7 +6,6 @@ import java.net.*;
 public class MainServer {
     protected int maxConnections;
     protected int listenPort;
-    protected ServerSocket serverSocket;
     public MainServer(int aListenPort, int maxConnections) {
         listenPort = aListenPort;
         this.maxConnections = maxConnections;
@@ -28,9 +27,11 @@ public class MainServer {
     protected void handleConnection(Socket connectionToHandle) {
         PooledConnectionHandler.processRequest(connectionToHandle);
     }
+
     public static void main(String[] args) {
         MainServer server = new MainServer(3000, 3);
         server.setUpHandlers();
+
         server.acceptConnections();
     }
     public void setUpHandlers() {
@@ -39,6 +40,7 @@ public class MainServer {
             new Thread(currentHandler, "Handler " + i).start();
         }
     }
+
 }
 
 

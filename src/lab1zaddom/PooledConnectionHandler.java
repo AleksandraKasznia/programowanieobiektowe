@@ -7,22 +7,41 @@ public class PooledConnectionHandler implements Runnable {
     protected static List pool = new LinkedList();
     public PooledConnectionHandler() {
     }
+
+    public void connectToServer(int port){
+        try {
+            Socket echoSocket = new Socket("localhost", port);
+            PrintWriter out = new PrintWriter(echoSocket.getOutputStream(), true);
+            out.println("połączyłem "+port);
+        }
+        catch(IOException e){
+            e.printStackTrace();
+        }
+    }
     public void handleConnection() {
         try {
-            PrintWriter streamWriter = new PrintWriter(connection.getOutputStream());
+            PrintWriter streamWriter = new PrintWriter(connection.getOutputStream(),true);
             BufferedReader streamReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            String fileToRead = streamReader.readLine();
-            BufferedReader fileReader = new BufferedReader(new FileReader(fileToRead));
-            String line;
-            while ((line = fileReader.readLine()) != null)
-                streamWriter.println(line);
-            fileReader.close();
+            String inputLine = streamReader.readLine();
+            String port = inputLine.substring(0,4);
+            if (port.equals("port")){
+                String[] portInfo = inputLine.split(":");
+                streamWriter.println("wiem, że jesteś serwerem");
+                streamReader.close();
+                streamWriter.close();
+                connectToServer(Integer.parseInt(portInfo[1]));
+
+            }
+            while (inputLine != null) {
+                streamWriter.println(inputLine);
+                inputLine = streamReader.readLine();
+            }
             streamWriter.close();
             streamReader.close();
-        } catch (FileNotFoundException e) {
-            System.out.println("Could not find requested file on the server.");
-        } catch (IOException e) {
-            System.out.println("Error handling a client: " + e);
+
+        }
+        catch (IOException e){
+            e.printStackTrace();
         }
     }
     public static void processRequest(Socket requestToHandle) {
