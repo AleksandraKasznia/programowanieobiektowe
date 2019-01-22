@@ -8,6 +8,7 @@ import java.util.Queue;
 public class MainServer {
     protected int maxConnections;
     protected int listenPort;
+
     Queue<Integer> serversQueue = new LinkedList<Integer>();
     public MainServer(int aListenPort, int maxConnections) {
         listenPort = aListenPort;

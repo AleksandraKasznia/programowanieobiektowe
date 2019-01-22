@@ -1,6 +1,7 @@
 package lab1zaddom;
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 
 public class CalculatingS2 {
     public static void main(String[] args) throws IOException {
@@ -38,26 +39,34 @@ public class CalculatingS2 {
         InputStream inputStream = clientSocket.getInputStream();
         BufferedReader streamReader = new BufferedReader(new InputStreamReader(inputStream));
         String inputLine = streamReader.readLine();
+        String groupBy = streamReader.readLine();
         System.out.println(inputLine);
+        System.out.println(groupBy);
+        String[] columns = groupBy.split(",");
         ObjectInputStream objectInput = new ObjectInputStream(inputStream);
         try {
             Object object = objectInput.readObject();
-            String recievedDataFromClient = (String) object;
+            Object objectNames = objectInput.readObject();
+            Object objectTypes = objectInput.readObject();
+            ArrayList<ArrayList> recievedDataFromClient = (ArrayList<ArrayList>) object;
+            String[] names = (String[])objectNames;
+            Class<Value>[] types = (Class<Value>[])objectTypes;
             System.out.println(recievedDataFromClient);
-            recievedDataFromClient += "tyłeczek";
+            DataFrame dataFrame = new DataFrame(recievedDataFromClient, names, types);
+            DataFrame counted = null;
+            switch (inputLine){
+                case "max":
+                    counted = dataFrame.groupby(columns).max();
+            }
+
             ObjectOutputStream objectOutput = new ObjectOutputStream(clientSocket.getOutputStream());
-            objectOutput.writeObject(recievedDataFromClient);
+            objectOutput.writeObject(counted.dataFrame);
         }
         catch (ClassNotFoundException e){
             e.printStackTrace();
         }
 
-        /*
-        if(inputLine.equals(myport)){
-            streamReader.close();
-            clientSocket.close();
-            clientSocket = server.accept();
-        }
-        */
     }
+
+
 }

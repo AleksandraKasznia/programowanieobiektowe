@@ -10,7 +10,8 @@ public class Client {
         Socket echoSocket = null;
         PrintWriter out = null;
         BufferedReader in = null;
-        String msg = "dupadupa";
+        ArrayList <Integer> msg = new ArrayList();
+        msg.add(2);
         DataFrame sentData = new DataFrame("test.csv",new Class[]{StringHolder.class, FloatHolder.class, FloatHolder.class, FloatHolder.class},true);
         DataFrame recievedData;
 
@@ -28,17 +29,19 @@ public class Client {
             System.exit(1);
         }
 
-        out.println("maxi");
+        out.println("max");
+        out.println("id");
 
         System.out.println("Type a message: ");
         ObjectOutputStream objectOutput = new ObjectOutputStream(echoSocket.getOutputStream());
         try {
-            objectOutput.writeObject(msg);
+            objectOutput.writeObject(sentData.dataFrame);
+            objectOutput.writeObject(sentData.names);
+            objectOutput.writeObject(sentData.types);
             System.out.println("Sending messages to the ServerSocket");
             ObjectInputStream objectInput = new ObjectInputStream(echoSocket.getInputStream());
             Object object = objectInput.readObject();
-            String cievedData =  (String) object;
-            System.out.println(cievedData);
+            System.out.println(object);
         }
         catch( ClassNotFoundException e){
             e.printStackTrace();

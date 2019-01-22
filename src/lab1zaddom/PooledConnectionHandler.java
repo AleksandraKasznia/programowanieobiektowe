@@ -26,9 +26,11 @@ public class PooledConnectionHandler implements Runnable {
             PrintWriter streamWriter = new PrintWriter(outputStream,true);
             BufferedReader streamReader = new BufferedReader(new InputStreamReader(inputStream));
             String inputLine = streamReader.readLine();
+            String groupBy = "";
             String port;
             try {
                 port = inputLine.substring(0, 4);
+
             }
             catch( IndexOutOfBoundsException e){
                 port = "not a server";
@@ -37,7 +39,8 @@ public class PooledConnectionHandler implements Runnable {
                 connectingServer(inputLine, streamReader, streamWriter);
             }
             else{
-                connectingClient(inputLine);
+                groupBy = streamReader.readLine();
+                connectingClient(inputLine, groupBy);
             }
 
         }
@@ -64,10 +67,11 @@ public class PooledConnectionHandler implements Runnable {
         }
     }
 
-    public Object sendAndRecieveCalculated(Object dataFrame, String action){
+    public Object sendAndRecieveCalculated(Object dataFrame, Object names, Object types, String action, String groupBy){
         System.out.println("zlecam watkowi");
         System.out.println(serversQueue);
-        esSplitData.execute(new DataExchange(serversQueue, action, dataFrame));
+        ArrayList<ArrayList> tmp = (ArrayList<ArrayList>) dataFrame;
+        esSplitData.execute(new DataExchange(serversQueue, action, tmp, names, types, groupBy));
         esSplitData.shutdown();
         try {
             boolean finished = esSplitData.awaitTermination(1, TimeUnit.MINUTES);
@@ -76,17 +80,18 @@ public class PooledConnectionHandler implements Runnable {
             e.printStackTrace();
         }
         System.out.println(dataFrame);
-        return dataFrame;
+        System.out.println(serversQueue);
+        return tmp;
     }
 
-    public void connectingClient(String inputLine){
+    public void connectingClient(String inputLine, String groupBy){
         try
         {
             ObjectInputStream objectInput = new ObjectInputStream(inputStream);
             Object object = objectInput.readObject();
-            System.out.println((String)object);
-            Object returning = sendAndRecieveCalculated(object, inputLine);
-            System.out.println(returning);
+            Object names = objectInput.readObject();
+            Object types = objectInput.readObject();
+            Object returning = sendAndRecieveCalculated(object, names, types, inputLine, groupBy);
             ObjectOutputStream objectOutput = new ObjectOutputStream(outputStream);
             objectOutput.writeObject(returning);
         }

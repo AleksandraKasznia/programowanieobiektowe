@@ -2,21 +2,28 @@ package lab1zaddom;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 
 public class DataExchange implements Runnable {
     protected static Queue<Integer> serversQueue;
-    protected static Object dataFrame;
+    ArrayList<ArrayList> dataFrame;
     String action;
     protected Socket serverSocket;
+    Object names;
+    Object types;
     int port;
+    String groupBy;
 
-    DataExchange(final Queue<Integer> serversQueue, String action,final Object dataFrame){
+    DataExchange(final Queue<Integer> serversQueue, String action, ArrayList<ArrayList> dataFrame,
+                 Object names, Object types, String groupBy){
         this.serversQueue = serversQueue;
         this.action = action;
         this.dataFrame = dataFrame;
-        System.out.println(serversQueue);
+        this.names = names;
+        this.types = types;
+        this.groupBy = groupBy;
     }
 
     public void connectToServer(){
@@ -43,13 +50,17 @@ public class DataExchange implements Runnable {
         try {
             PrintWriter streamWriter = new PrintWriter(serverSocket.getOutputStream(), true);
             streamWriter.println(action);
+            streamWriter.println(groupBy);
+            System.out.println(groupBy);
             ObjectOutputStream objectOutput = new ObjectOutputStream(serverSocket.getOutputStream());
             objectOutput.writeObject(dataFrame);
+            objectOutput.writeObject(names);
+            objectOutput.writeObject(types);
             ObjectInputStream objectInput = new ObjectInputStream(serverSocket.getInputStream());
             synchronized (dataFrame) {
-                dataFrame = objectInput.readObject();
+                dataFrame.clear();
+                dataFrame.addAll((ArrayList<ArrayList>)objectInput.readObject());
             }
-            System.out.println(dataFrame);
         }
         catch(IOException | ClassNotFoundException e){
             e.printStackTrace();
@@ -62,9 +73,7 @@ public class DataExchange implements Runnable {
         sendData();
         synchronized (serversQueue){
             serversQueue.add(port);
-            System.out.println(dataFrame);
             serversQueue.notify();
-            System.out.println(dataFrame);
         }
     }
 }
