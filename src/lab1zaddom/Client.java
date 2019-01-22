@@ -2,6 +2,7 @@ package lab1zaddom;
 
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 
 public class Client {
     public static void main(String[] args) throws IOException {
@@ -9,6 +10,9 @@ public class Client {
         Socket echoSocket = null;
         PrintWriter out = null;
         BufferedReader in = null;
+        String msg = "dupadupa";
+        DataFrame sentData = new DataFrame("test.csv",new Class[]{StringHolder.class, FloatHolder.class, FloatHolder.class, FloatHolder.class},true);
+        DataFrame recievedData;
 
         try {
             echoSocket = new Socket("localhost", 3000);
@@ -24,19 +28,25 @@ public class Client {
             System.exit(1);
         }
 
-        BufferedReader stdIn = new BufferedReader(
-                new InputStreamReader(System.in));
-        String userInput;
+        out.println("maxi");
 
         System.out.println("Type a message: ");
-        while ((userInput = stdIn.readLine()) != null) {
-            out.println(userInput);
-            System.out.println("echo: " + in.readLine());
+        ObjectOutputStream objectOutput = new ObjectOutputStream(echoSocket.getOutputStream());
+        try {
+            objectOutput.writeObject(msg);
+            System.out.println("Sending messages to the ServerSocket");
+            ObjectInputStream objectInput = new ObjectInputStream(echoSocket.getInputStream());
+            Object object = objectInput.readObject();
+            String cievedData =  (String) object;
+            System.out.println(cievedData);
         }
+        catch( ClassNotFoundException e){
+            e.printStackTrace();
+        }
+
 
         out.close();
         in.close();
-        stdIn.close();
         echoSocket.close();
     }
 }

@@ -2,10 +2,13 @@ package lab1zaddom;
 
 import java.io.*;
 import java.net.*;
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class MainServer {
     protected int maxConnections;
     protected int listenPort;
+    Queue<Integer> serversQueue = new LinkedList<Integer>();
     public MainServer(int aListenPort, int maxConnections) {
         listenPort = aListenPort;
         this.maxConnections = maxConnections;
@@ -36,7 +39,7 @@ public class MainServer {
     }
     public void setUpHandlers() {
         for (int i = 0; i < maxConnections; i++) {
-            PooledConnectionHandler currentHandler = new PooledConnectionHandler();
+            PooledConnectionHandler currentHandler = new PooledConnectionHandler(serversQueue);
             new Thread(currentHandler, "Handler " + i).start();
         }
     }
